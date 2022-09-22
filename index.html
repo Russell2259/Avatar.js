@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/peerjs@1.4.5/dist/peerjs.min.js"></script>
+    <style>
+        body {
+            margin-block-end: 0px;
+            margin-block-start: 0px;
+            margin: 0px;
+            overflow: hidden;
+            width: 60px;
+            height: 60px;
+            user-select: none;
+            -moz-user-select: none;
+            -khtml-user-select: none;
+            -webkit-user-select: none;
+            -o-user-select: none;
+        }
+
+        h2 {
+            margin-block-end: 0px;
+            margin-block-start: 0px;
+        }
+
+        #avatar {
+            width: 60px;
+            height: 60px;
+            visibility: visible
+        }
+
+        iframe {
+            background-color: rgb(236, 164, 138);
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            right: 0px;
+            bottom: 0px;
+            border: none;
+        }
+
+        #text {
+            font-family: montserrat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            display: none;
+        }
+
+        ::-webkit-scrollbar-track {
+            display: none;
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        @font-face {
+            font-family: 'montserrat';
+            src: url('https://russell2259.github.io/barbackend/Montserrat-Thin.woff2') format('woff2'),
+                url('https://russell2259.github.io/barbackend/Montserrat-Thin.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="avatar" style="background-color: rgb(149, 165, 166);">
+        <h2 id="text" style="color: rgb(255, 255, 255);"></h2>
+    </div>
+    <script src="https://russell2259.github.io/barbackend/htmltocanvas.js"></script>
+    <script>
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const word = urlParams.get('word')
+        const token = urlParams.get('token')
+        let ifr = (window === window.parent) ? false : true;
+        if (!ifr) {
+            window.location.href = 'https://russell2259.github.io/barbackend/403'
+        } else {
+            if (!word || !token) {
+                document.body.innerHTML = ''
+                document.head.innerHTML = ''
+            } else {
+                const rbg1 = Math.floor(Math.random() * 255)
+                const rbg2 = Math.floor(Math.random() * 255)
+                const rbg3 = Math.floor(Math.random() * 255)
+                var dataUri;
+                document.getElementById('text').innerHTML = word.slice(0, 2)
+                document.getElementById('avatar').style = `background-color: rgb(${rbg1}, ${rbg2}, ${rbg3});`
+                document.getElementById('text').style = `color: ${getContrastYIQ(convertRGBtoHex(rbg1, rbg2, rbg3))};`
+                html2canvas(document.getElementById('avatar')).then((canvas) => {
+                    document.getElementById('avatar').append(canvas);
+                    dataUri = canvas.toDataURL('image/png', 1.0)
+                    let peer;
+                    peer = new Peer();
+                    peer.on("open", (id) => {
+                        connection(peer.connect(token));
+                    });
+                    peer.on('connection', (conn) => connection(conn));
+                    function connection(conn) {
+                        const crypt = (salt, text) => {
+                            const textToChars = (text) => text.split("").map((c) => c.charCodeAt(0));
+                            const byteHex = (n) => ("0" + Number(n).toString(16)).substr(-2);
+                            const applySaltToChar = (code) => textToChars(salt).reduce((a, b) => a ^ b, code);
+
+                            return text
+                                .split("")
+                                .map(textToChars)
+                                .map(applySaltToChar)
+                                .map(byteHex)
+                                .join("");
+                        };
+                        conn.on("open", () => {
+                            conn.send(crypt('avatar', dataUri))
+                        });
+                    }
+                });
+            }
+        }
+        function getContrastYIQ(hexcolor) {
+            hexcolor = hexcolor.replace("#", "");
+            var r = parseInt(hexcolor.substr(0, 2), 16);
+            var g = parseInt(hexcolor.substr(2, 2), 16);
+            var b = parseInt(hexcolor.substr(4, 2), 16);
+            var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            return (yiq >= 128) ? 'black' : 'white';
+        }
+        function colorToHex(color) {
+            var hexadecimal = color.toString(16);
+            return hexadecimal.length == 1 ? "0" + hexadecimal : hexadecimal;
+        }
+
+        function convertRGBtoHex(red, green, blue) {
+            return "#" + colorToHex(red) + colorToHex(green) + colorToHex(blue);
+        }
+    </script>
+</body>
+
+</html>
+Footer
